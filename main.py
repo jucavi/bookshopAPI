@@ -1,17 +1,13 @@
 from flask import Flask, request, g
 import sqlite3
-import os
-import json
+from db import DBpath
 
 app = Flask(__name__)
-cwd = os.path.dirname(__file__)
-DB = 'bookshop.db'
-
 
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(os.path.join(cwd, DB))
+        db = g._database = sqlite3.connect(DBpath)
     db.row_factory = sqlite3.Row
     return db
 
@@ -23,15 +19,66 @@ def close_connection(exception):
         db.close()
 
 
-# def db_keys(table):
-#     cur = get_db().cursor()
-#     info = cur.execute(f'''PRAGMA table_info({table})''')
-#     return [col[1] for col in info]
-
 def to_json(items, one=False):
     if one:
         return dict(items)
     return {'data': [dict(item) for item in items]}
+
+
+def get_all(table, **params):
+    sort = params.get('sort', 'NULL')
+    order = params.get('order', 'ASC')
+    query = f'SELECT * FROM {table} ORDER BY {sort} {order};'
+    cur = save_execute(query, changes=False)
+    return cur.fetchall()
+
+
+def get_by_id(table, Id, fields=('*',)):
+    cur = get_db().cursor()
+    fields = ','.join(fields)
+    cur.execute(f'SELECT {fields} FROM {table} WHERE id=:id;', {'id': Id})
+    return cur.fetchone()
+
+
+def save_execute(query, args={}, changes=True):
+    cur = get_db().cursor()
+    try:
+        cur.execute(query, args)
+    except Exception as e:
+        print(e)
+    get_db().commit()
+    if not changes:
+        return cur
+    return cur.rowcount
+
+
+def delete_by_id(table, Id):
+    return delete_by(table, 'id', Id)
+
+
+def delete_by(table, field, value):
+    query = f'DELETE FROM {table} WHERE {field}=:value;'
+    return save_execute(query, {'value': value})
+
+
+def update_by_id(table, Id, **params):
+    return update(table, 'id', Id, **params)
+
+
+def update(table, field, value, **params):
+    set = ','.join(f'{key}={value!r}' for key, value in params.items())
+    query = f'UPDATE {table} SET {set} WHERE {field}=:value;'
+    return save_execute(query, {'value': value})
+
+def new(table, **params):
+    query = f'INSERT INTO {table} (title, author, genre, stock) VALUES(?, ?, ?, ?);'
+    args = (
+        params.get('title', 'NULL'),
+        params.get('author', 'NULL'),
+        params.get('genre', 'NULL'),
+        params.get('stock', 'NULL')
+    )
+    return save_execute(query, args)
 
 @app.route('/')
 def index():
@@ -40,68 +87,36 @@ def index():
 
 @app.route('/all')
 def all():
-    cur = get_db().cursor()
-    query = '''SELECT * FROM books'''
-    try:
-        order = request.args.get('order') or 'ASC'
-        rows = cur.execute(
-            f'''{query} ORDER BY {request.args['sort']} {order};''').fetchall()
-    except:
-        rows = cur.execute(f'''{query};''').fetchall()
-    return to_json(rows)
+    return to_json(get_all('books', **request.args))
 
 
 @app.route('/book/<book_id>', methods=['GET', 'DELETE', 'PUT'])
 def book_by_id(book_id):
-    cur = get_db().cursor()
-    try:
-        book = next(cur.execute(f'''SELECT * FROM books WHERE id={book_id};'''))
-    except:
-        return 'Book not found.'
+    book = get_by_id('books', book_id)
+    if not book:
+        return 'Not book found!'
 
     if request.method == 'DELETE':
-        cur.execute(f'''DELETE FROM books WHERE id={book_id};''')
+        changes = delete_by_id('books', book_id)
 
     if request.method == 'PUT':
-        params = dict(request.form)
-        set = ','.join(f'{key}={value!r}' for key, value in params.items())
-        # blow if not params
-        try:
-            cur.execute(f'''UPDATE books SET {set} WHERE id={book_id};''')
-        except:
-            return 'Invalid params!'
+        changes = update('books', 'id', book_id, **request.form)
 
     if request.method == 'GET':
         return to_json(book, one=True)
 
-    get_db().commit()
-    method = 'Updated' if request.method == 'PUT' else 'Deleted'
-
-    return f'Book successfully {method}'
+    action = 'Updated' if request.method == 'PUT' else 'Deleted'
+    if changes > 0:
+        return f'Book successfully {action}, ({changes}) changes made.'
+    else:
+        return 'No changes made! Invalid params'
 
 @app.route('/new', methods=['POST'])
-def new():
-    cur = get_db().cursor()
-    params = dict(request.form)
-    try:
-        cur.execute('''
-            INSERT INTO books (title, author, genre, stock) VALUES (?, ?, ?, ?);''',
-            (
-                params.get('title'),
-                params.get('author'),
-                params.get('genre'),
-                params.get('stock')
-                # params.get('title', 'NULL'),
-                # params.get('author', 'NULL'),
-                # params.get('genre', 'NULL'),
-                # params.get('stock', 'NULL')
-            )
-        )
-        get_db().commit()
-        return 'Book successfully Created'
-    except:
-        return 'Fail!'
-
+def new_book():
+    changes = new('books', **request.form)
+    if changes:
+        return f'Book successfully Created, {changes} row changes.'
+    return 'Something went wrong!'
 
 
 if __name__ == '__main__':

@@ -1,45 +1,58 @@
-import sqlite3
 import os
+import sqlite3
 import json
 
+DB = 'bookshop.db'
+json_db = 'bookshop.json'
 cwd = os.path.dirname(__file__)
+DBpath = os.path.join(cwd, DB)
 
-# con = sqlite3.connect(os.path.join(f'{cwd}/bookshop.db'))
-# cur = con.cursor()
 
-# with open(f'{cwd}/bookshop.json') as file:
-#     data = json.load(file)['data']
-
-# cur.execute('''DROP TABLE books;''')
-# books = (tuple(book.values())[1:] for book in data)
-
-# con.execute('''
-#     CREATE TABLE books(
-#         id INTEGER PRIMARY KEY AUTOINCREMENT,
-#         title TEXT(40) NOT NULL,
-#         author TEXT(20) NOT NULL,
-#         genre TEXT(20) NOT NULL,
-#         stock INTEGER NOT NULL
-# );''')
-
-# cur.executemany('''
-#     INSERT INTO books (title, author, genre, stock)
-#     VALUES (?, ?, ?, ?);''',
-#     books
-# )
-# con.commit()
-# con.close()
-
-def books(rjson=True):
+def setup_data():
+    conn = sqlite3.connect(DBpath)
     try:
-        with sqlite3.connect(os.path.join(f'{cwd}/bookshop.db')) as con:
-            if rjson:
-                con.row_factory = sqlite3.Row
-            cur = con.cursor()
-            rows = cur.execute('''SELECT * FROM books''')
-            if not rjson:
-                return rows.fetchall()
-            return { 'data': [dict(book) for book in rows] }
-    except Exception as e:
-        print(e)
-        
+        conn.cursor().execute('DROP TABLE books;')
+    except:
+        pass
+
+    make_database(conn)
+    populate(conn)
+
+    conn.close()
+
+
+def make_database(conn):
+    conn.execute('''
+        CREATE TABLE books(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT(40) NOT NULL,
+            author TEXT(20) NOT NULL,
+            genre TEXT(20) NOT NULL,
+            stock INTEGER NOT NULL
+    );''')
+
+def populate(conn):
+    cur = conn.cursor()
+    books = (
+        (
+            book['title'],
+            book['author'],
+            book['genre'],
+            book['stock']
+        )
+        for book in data_json()
+    )
+    cur.executemany(
+        '''INSERT INTO books (title, author, genre, stock) VALUES (?, ?, ?, ?);''',
+        books
+    )
+    conn.commit()
+
+
+def data_json():
+    with open(os.path.join(cwd, json_db)) as f:
+        return json.load(f)['data']
+
+
+if __name__ == '__main__':
+    setup_data()
