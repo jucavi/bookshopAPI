@@ -1,0 +1,88 @@
+{
+    "data": [
+        {
+            "id": "cf_1",
+            "title": "El hombre bicentenario",
+            "author": "Isaac Asimov",
+            "genre": "Ciencia ficción",
+            "stock": 16
+        },
+        {
+            "id": "ne_1",
+            "title": "Lobo de mar",
+            "author": "Jack London",
+            "genre": "Narrativa extranjera",
+            "stock": 14
+        },
+        {
+            "id": "np_1",
+            "title": "El legado de los huesos",
+            "author": "Dolores Redondo",
+            "genre": "Narrativa policíaca",
+            "stock": 15
+        },
+        {
+            "id": "dc_1",
+            "title": "El error de Descartes",
+            "author": "Antonio Damasio",
+            "genre": "Divulgación científica",
+            "stock": 12
+        },
+        {
+            "id": "dc_2",
+            "title": "El ingenio de los pájaros",
+            "author": "Jennifer Ackerman",
+            "genre": "Divulgación científica",
+            "stock": 18
+        },
+        {
+            "id": "ne_4",
+            "title": "El corazón de las tinieblas",
+            "author": "Joseph Conrad",
+            "genre": "Narrativa extranjera",
+            "stock": 10
+        },
+        {
+            "id": "dc_5",
+            "title": "Metro 2033",
+            "author": "Dmitri Glujovski",
+            "genre": "Divulgación científica",
+            "stock": 10
+        },
+        {
+            "id": "dc_6",
+            "title": "Sidharta",
+            "author": "Hermann Hesse",
+            "genre": "Narrativa extranjera",
+            "stock": 10
+        },
+        {
+            "id": "el_1",
+            "title": "Las armas y las letras",
+            "author": "Andres Trapiello",
+            "genre": "Narrativa extranjera",
+            "stock": 12
+        },
+        {
+            "id": "rm_1",
+            "title": "El tambor de hojalata",
+            "author": "Gunter Grass",
+            "genre": "Realismo Magico",
+            "stock": 45
+        },
+        {
+            "id": "dd_1",
+            "title": "1984",
+            "author": "Geroge Orwell",
+            "genre": "Dystopian",
+            "stock": 2
+        },
+        {
+            "id": "dd_2",
+            "title": "Revelion en la granja",
+            "author": "Geroge Orwell",
+            "genre": "Dystopian",
+            "stock": 12
+        }
+    ]
+}
