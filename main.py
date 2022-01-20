@@ -4,6 +4,7 @@ from db import DBpath
 
 app = Flask(__name__)
 
+
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
@@ -28,6 +29,9 @@ def to_json(items, one=False):
 def get_all(table, **params):
     sort = params.get('sort', 'NULL')
     order = params.get('order', 'ASC')
+    if order.upper() not in ['ASC', 'DESC']:
+        order = 'ASC'
+
     query = f'SELECT * FROM {table} ORDER BY {sort} {order};'
     cur = save_execute(query, changes=False)
     return cur.fetchall()
@@ -70,6 +74,7 @@ def update(table, field, value, **params):
     query = f'UPDATE {table} SET {set} WHERE {field}=:value;'
     return save_execute(query, {'value': value})
 
+
 def new(table, **params):
     query = f'INSERT INTO {table} (title, author, genre, stock) VALUES(?, ?, ?, ?);'
     args = (
@@ -79,6 +84,7 @@ def new(table, **params):
         params.get('stock', 'NULL')
     )
     return save_execute(query, args)
+
 
 @app.route('/')
 def index():
@@ -107,9 +113,10 @@ def book_by_id(book_id):
 
     action = 'Updated' if request.method == 'PUT' else 'Deleted'
     if changes > 0:
-        return f'Book successfully {action}, ({changes}) changes made.'
+        return f'Book successfully {action}, {changes} row changes'
     else:
         return 'No changes made! Invalid params'
+
 
 @app.route('/new', methods=['POST'])
 def new_book():
